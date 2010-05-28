@@ -196,9 +196,44 @@
 			this.widgets[widgetModule.name].prototype.sendMessage = Augments.sendMessage;
 			this.widgets[widgetModule.name].prototype.reinit = (function (reinit) {
 				return function () {
-					Helpers.bind(reinit, this)();
-				}
+					reinit.call(this);
+				};
 			})(widgetModule.reinit);
+		};
+		/**
+		 * Extend an existing widget.
+		 * @param {String} widgetName Existing widget to be extended
+		 * @param {Object} extention Widget object to extend the existing widget with.
+		 */
+		LiveWidgets.prototype.extendWidget = function (widgetName, extention) {
+			
+			if (!extention.reinit) {
+				extention.reinit = this.widgets[widgetName].prototype.reinit;
+			}
+			
+			extention = Helpers.cleanWidget(extention);
+			
+			if (!extention.name) {
+				return false;
+			}
+			
+			if (!Helpers.validateController(extention.controller)) {
+				return false;
+			}
+			
+			this.widgets[extention.name] = function (element) {
+				this.widgets[widgetName].call(this, element);
+				extention.constructor.call(this, element);
+			};
+			
+			this.widgets[extention.name].prototype = this.widgets[widgetName].prototype;
+			
+			this.widgets[extention.name].prototype.handleMessage = extention.controller.handleMessage || this.widgets[widgetName].prototype.handleMessage;
+			this.widgets[extention.name].prototype.reinit = (function (reinit) {
+				return function () {
+					reinit.call(this);
+				};
+			})(extention.reinit);
 		};
 		/**
 		 * Set every thing up to prepare to create an instance of the widget.
@@ -226,7 +261,7 @@
 			}
 		}
 		
-		DOMWindow.LiveWidgets = new LiveWidgets(DOMWindow, DOMDocument);
+		LiveWidgets = new LiveWidgets(DOMWindow, DOMDocument);
 		/**
 		 * Class for managing the scanning of the DOM document.
 		 * @param {Number} interval Interval length in MS to time successive
@@ -246,7 +281,7 @@
 			var domElements = DOMDocument.getElementsByTagName('*');
 			for (var el = 0, len = domElements.length; el < len; el += 1) {
 				if (domElements[el].getAttribute('data-widget') && !domElements[el].getAttribute('data-widget-id')) {
-					DOMWindow.LiveWidgets.initializeWidget(domElements[el]);
+					LiveWidgets.initializeWidget(domElements[el]);
 				}
 			}
 		};
@@ -268,6 +303,13 @@
 		
 		Monitor = new Monitor(33);
 		Monitor.startScanning();
+		
+		DOMWindow.LiveWidgets = {
+			addWidget: LiveWidgets.addWidget,
+			extendWidget: LiveWidgets.extendWidget,
+			stopScanning: Monitor.stopScanning,
+			startScanning: Monitor.startScanning
+		};
 		
 	}
 	
