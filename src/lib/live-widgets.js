@@ -308,6 +308,7 @@
 		var Monitor = function (interval) {
 			this.interval = interval;
 			this.monitor = {};
+			this.domSize = 0;
 		};
 		/**
 		 * Search the document for elements with the data-widget attribute that do
@@ -317,6 +318,10 @@
 		 */
 		Monitor.prototype.searchForElements = function () {
 			var domElements = DOMDocument.getElementsByTagName('*');
+			if (domElements.length == this.domSize) {
+				return false;
+			}
+			this.domSize = domElements.length;
 			for (var el = 0, len = domElements.length; el < len; el += 1) {
 				if (domElements[el].getAttribute('data-widget') && !domElements[el].getAttribute('data-widget-id')) {
 					LiveWidgets.initializeWidget(domElements[el]);
@@ -328,8 +333,13 @@
 		 * @returns undefined
 		 */
 		Monitor.prototype.startScanning = function () {
-			clearInterval(this.monitor);
-			this.monitor = setInterval(Helpers.bind(this.searchForElements, this), this.interval);
+			try {
+				document.addEventListener('DOMNodeInsertedIntoDocument', Helpers.bind(this.searchForElements), true);
+			}
+			catch (e) {
+				clearInterval(this.monitor);
+				this.monitor = setInterval(Helpers.bind(this.searchForElements, this), this.interval);
+			}
 		};
 		/**
 		 * Stop scanning the document for widgets.
