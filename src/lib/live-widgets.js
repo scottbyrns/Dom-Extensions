@@ -1,6 +1,28 @@
 (function (DOMWindow, DOMDocument) {
 	
 	if (!DOMWindow.LiveWidgets) {
+		var TemplateEngine = function () {
+			/* Create the cache object */
+			var cache = {},
+			_template;
+			/* Define the alias for the tmpl method and define the tmpl method */
+			_template = function tmpl(template, data){
+				/* Figure out if we're getting a template, or if we need to
+				 load the template - and be sure to cache the result. */
+				var fn = !/\W/.test(template) ? cache[template] = cache[template] || _template(template) :
+				/* Generate a reusable function that will serve as a template
+				 generator (and which will be cached). */
+				new Function("obj",
+				"var p=[],print=function(){p.push.apply(p,arguments);};" +
+				/* Introduce the data as local variables using with(){} */
+				"with(obj){p.push('" +
+				/*  Convert the template into pure JavaScript */
+				template.replace(/[\r\t\n]/g, " ").split("<?").join("\t").replace(/((^|\?>)[^\t]*)'/g, "$1\r").replace(/\t=(.*?)\?>/g, "',$1,'").split("\t").join("');").split("?>").join("p.push('").split("\r").join("\\'") + "');}return p.join('');");
+				/* Provide some basic currying to the user */
+				return data ? fn( data ) : fn;
+			};
+			return _template;
+		}();
 		/**
 		 * Class to manage and coordinate the communication between a pool of registered listeners.
 		 * @returns undefined
@@ -123,7 +145,7 @@
 			 * Create the widget constructor. We capture the model in the scope of the
 			 * constroctur, add the element property, controller methods with scope
 			 * correction, call the widget constructor in the scope of this constructor,
-			 * register a listener for linked widgets, and call reinit.
+			 * register a listener for grouped widgets, and call reinit.
 			 * @param {Object} widget Our widget we are creating a class for.
 			 * @returns undefined
 			 */
@@ -132,7 +154,7 @@
 					this.model = Helpers.deepClone(widget.model, this);
 					for (var i = 0, len = element.attributes.length; i < len; i += 1) {
 						var name = element.attributes[i].name;
-						if (name.indexOf('data-') > -1 && name !== 'data-widget-id' && name !== 'data-widget' && name !== 'data-group') {
+						if (name.indexOf('data-') > -1 && name !== 'data-widget-id' && name !== 'data-widget' && name !== 'data-template') {
 							this.model[name.replace('data-', '')] = element.getAttribute(name);
 						}
 					}
@@ -140,8 +162,8 @@
 					this.controller = Helpers.deepClone(widget.controller, this);
 					widget.constructor.call(this);
 					
-					if (this.model.link) {
-						MessageController.registerListener(this.model.link, Math.floor(Math.random() * new Date()), Helpers.bind(function (messageObject) {
+					if (this.model.group) {
+						MessageController.registerListener(this.model.group, Math.floor(Math.random() * new Date()), Helpers.bind(function (messageObject) {
 							this.handleMessage(messageObject.message, messageObject.channel);
 						}, this));
 					}
@@ -158,10 +180,17 @@
 			 * @param {String} channel Channel that can be used to filter messages for requests.
 			 */
 			sendMessage: function (message, channel) {
-				MessageController.sendMessage(this.model.link, {
+				MessageController.sendMessage(this.model.group, {
 					message: message,
 					channel: channel
 				});
+			},
+			/**
+			 * Replace the innerHTML of the widget element with a rendered template
+			 * @returns undefined
+			 */
+			renderTemplate: function () {
+				this.element.innerHTML = TemplateEngine(this.template, this.model);
 			}
 		};
 		/**
@@ -193,12 +222,18 @@
 			
 			this.widgets[widgetModule.name].prototype.handleMessage = widgetModule.controller.handleMessage || function () {};
 			
+			this.widgets[widgetModule.name].prototype.template = widgetModule.template || false;
 			this.widgets[widgetModule.name].prototype.sendMessage = Augments.sendMessage;
 			this.widgets[widgetModule.name].prototype.reinit = (function (reinit) {
 				return function () {
+					if (this.template) {
+						this.renderTemplate();
+					}
 					reinit.call(this);
 				};
 			})(widgetModule.reinit);
+			
+			this.widgets[widgetModule.name].prototype.renderTemplate = Augments.renderTemplate;
 		};
 		/**
 		 * Extend an existing widget.
@@ -231,6 +266,9 @@
 			this.widgets[extention.name].prototype.handleMessage = extention.controller.handleMessage || this.widgets[widgetName].prototype.handleMessage;
 			this.widgets[extention.name].prototype.reinit = (function (reinit) {
 				return function () {
+					if (this.template) {
+						this.renderTemplate();
+					}
 					reinit.call(this);
 				};
 			})(extention.reinit);
@@ -305,10 +343,10 @@
 		Monitor.startScanning();
 		
 		DOMWindow.LiveWidgets = {
-			addWidget: LiveWidgets.addWidget,
-			extendWidget: LiveWidgets.extendWidget,
-			stopScanning: Monitor.stopScanning,
-			startScanning: Monitor.startScanning
+			addWidget: Helpers.bind(LiveWidgets.addWidget, LiveWidgets),
+			extendWidget: Helpers.bind(LiveWidgets.extendWidget, LiveWidgets),
+			stopScanning: Helpers.bind(Monitor.stopScanning, Monitor),
+			startScanning: Helpers.bind(Monitor.startScanning, Monitor)
 		};
 		
 	}
