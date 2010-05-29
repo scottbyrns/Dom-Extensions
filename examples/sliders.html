@@ -1,0 +1,59 @@
+<html>
+    <head>
+        <script type="text/javascript" src="../src/lib/live-widgets.js"></script>
+        <script type="text/javascript" src="../src/widgets/slider.js"></script>
+        <script type="text/javascript" src="../src/widgets/drawer.js"></script>
+        <script type="text/javascript" src="../src/widgets/event-trigger.js"></script>
+        <style type="text/css">
+            body
+            {
+                background-image:url(images/background.png);
+            }
+
+            div.slider
+            {
+                width:300px;
+                height:15px;
+                margin:10px;
+                background-image:url(images/slider_bg.png);
+            }
+            
+            div.slider div
+            {
+                height:15px;
+                width:0%;
+                overflow:visible;
+                position:relative;
+                background-image:url(images/slider_bar_bg.png);
+            }
+            
+            div.slider div div
+            {
+                height:18px;
+                width:15px;
+                position:absolute;
+                top:-2px;
+                right:-12px;
+/*                margin-right:-3px;*/
+                background-image:url(images/slider_handle.png);
+            }
+        </style>
+    </head>
+    <body>
+        
+        <a href="#" data-widget="event-trigger" data-event="click" data-message="toggle-drawer" data-group="drawer"> Toggle Drawer </a>
+        
+        <div data-widget="drawer" data-group="drawer" style="overflow:hidden;">
+            <p>
+                Lorem ipsum dolor sit amet, consectetur adipisicing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.
+            </p>
+        </div>
+
+        <div data-widget="slider" data-percent="25" class="slider"></div>
+        <div data-widget="slider" data-percent="10" class="slider"></div>
+        <div data-widget="slider" data-percent="50" class="slider"></div>
+        <div data-widget="slider" data-percent="14" class="slider"></div>
+        <div data-widget="slider" data-percent="87" class="slider"></div>
+        
+    </body>
+</html>
