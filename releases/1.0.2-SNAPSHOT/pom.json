@@ -1,0 +1,19 @@
+{
+    "name": "Live Widgets",
+    "description": "A library for rendering mvc widgets live into a web application.",
+    "groupId": "com.scottbyrns",
+    "artifactId": "LiveWidgets",
+    "version": "1.0.2-SNAPSHOT",
+    "url": "https://github.com/scottbyrns/Live-Widgets",
+    "scm": "git@github.com:scottbyrns/Live-Widgets.git",
+    "issueTracking": "https://github.com/scottbyrns/Live-Widgets/issues",
+    "developers": [
+        {}
+    ],
+    "sources": [
+        "Framework.js",
+        "README"
+    ],
+    "dependencies": [],
+    "configuration": {}
+}
